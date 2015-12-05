@@ -9,27 +9,29 @@ import cv2
 from tf.transformations import euler_from_quaternion
 # import numpy as np
 import math
+import os
 
 
 
 class StreetViewDriver(object):
 
-    def __init__(self, image_topic, photoNumber):
+    def __init__(self, image_topic, photoNumber, base_path):
         rospy.init_node('streetviewdriver')
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         rospy.Subscriber("/odom", Odometry, self.odom_signal)
         rospy.Subscriber(image_topic, Image, self.camera_signal)
         self.bridge = CvBridge()
-        cv2.namedWindow('video_window')
+        # cv2.namedWindow('video_window')
         
         # initialization
+        self.base_path = base_path
         self.odom = None
         self.cv_image = None
         self.x = 0
         self.y = 0
         self.yaw = 0
         self.twist = Twist()
-        self.angularVelocity = 0.5
+        self.angularVelocity = 0.25
         self.photoNumber = photoNumber
         self.diff = 2*math.pi/self.photoNumber
 
@@ -39,6 +41,14 @@ class StreetViewDriver(object):
         orientation_tuple = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
         angles = euler_from_quaternion(orientation_tuple)
         return pose.position.x, pose.position.y, angles[2]
+
+    @staticmethod
+    def create_pose_folder(self):
+        pose_folder = "{x},{y}".format(x=self.x, y=self.y)
+        path = os.path.join(self.base_path, 'raw', pose_folder)
+        if not os.path.exists(path):
+            os.mkdir(path)
+            self.save_path = path
 
     def odom_signal(self, msg):
         self.odom = msg
@@ -64,7 +74,7 @@ class StreetViewDriver(object):
             # SAVE PHOTOS
             degrees = 180/math.pi * self.yaw
             print degrees
-            cv2.imwrite("../images/{}.jpg".format(round(degrees, 0)), self.cv_image)
+            cv2.imwrite(os.path.join(self.save_path,"{}.jpg".format(int(round(degrees, 0))), self.cv_image)
             # waypoint = "{theta}".format(theta=self.yaw)
             # self.camera_roll[waypoint] = self.cv_image
             # self.cv_image
@@ -77,5 +87,9 @@ class StreetViewDriver(object):
             r.sleep()
 
 if __name__ == '__main__':
-    node = StreetViewDriver("/camera/image_raw", 36)
-    node.run()
+    base_path = "/home/zhecan/github/Panorama_Construction/street_view_images"
+    # node = StreetViewDriver("/camera/image_raw", 36, base_path)
+    # node.run()
+            # self.save_path = path
+
+    create_pose_folder(2.55, -3.5)
