@@ -70,7 +70,7 @@ class StreetViewDriver(object):
         return abs(x - y) < epsilon
 
     def screenshot(self):
-        if self.about_equal(abs(self.yaw)%self.diff, 0):
+        if self.about_equal(abs(self.yaw)%self.diff, 0) and self.cv_image:
             # SAVE PHOTOS
             degrees = 180/math.pi * self.yaw
             print degrees
