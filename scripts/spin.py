@@ -37,8 +37,10 @@ class StreetViewDriver(object):
         self.diff = 2*math.pi/self.photoNumber
         self.theta_start = None
 
-        while self.x is None:
+        while self.x is None or self.yaw is None:
+            print "waiting for pos and degrees"
             continue
+        self.lastDegrees = self.yaw
         self.create_pose_folder()
 
     @staticmethod
@@ -58,6 +60,7 @@ class StreetViewDriver(object):
     def odom_signal(self, msg):
         self.odom = msg
         self.x, self.y, self.yaw = self.convert_pose_to_xy_and_theta(self.odom.pose.pose)
+        # print "self.x", self.x
 
     def camera_signal(self, msg):
         self.cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
@@ -69,7 +72,7 @@ class StreetViewDriver(object):
         # first time
         if self.theta_start is None:
             self.theta_start = self.yaw
-            self.theta_end = self.theta_start - 3 * math.pi / 180
+            self.theta_end = self.theta_start - 10 * math.pi / 180
 
         # self.theta_end = self.yaw - self.theta_start - 10 * math.pi / 180
         # if self.about_equal(self.theta_end, 0):
@@ -81,16 +84,25 @@ class StreetViewDriver(object):
         self.pub.publish(self.twist)
 
     @staticmethod
-    def about_equal(x, y, epsilon=1e-1):
+    def about_equal(x, y, epsilon=0.15):
         val = abs(x - y)
         return val < epsilon
 
+    @staticmethod
+    def smaller_about_equal(x, y, epsilon=.5):
+        val = abs(x - y)
+        return val < epsilon
+
+
     def screenshot(self):
-        if self.about_equal(abs(self.yaw)%self.diff, 0) and self.cv_image is not None:
+        if self.smaller_about_equal(abs(self.yaw)%self.diff, 0) and self.cv_image is not None:
             # SAVE PHOTOS
             degrees = 180/math.pi * self.yaw
-            # print degrees
-            cv2.imwrite(os.path.join(self.save_path,"{}.jpg".format(int(round(degrees, 0)))), self.cv_image)
+            print degrees
+            if abs(degrees-self.lastDegrees)>=(self.diff/math.pi)*180-2.85:
+                cv2.imwrite(os.path.join(self.save_path,"{}.jpg".format(int(round(degrees, 0))+180)), self.cv_image)
+                self.lastDegrees = degrees
+           
             # waypoint = "{theta}".format(theta=self.yaw)
             # self.camera_roll[waypoint] = self.cv_image
             # self.cv_image
@@ -104,7 +116,7 @@ class StreetViewDriver(object):
 
 if __name__ == '__main__':
     base_path = "/home/zhecan/github/Panorama_Construction/street_view_images"
-    node = StreetViewDriver("/camera/image_raw", 36, base_path)
+    node = StreetViewDriver("/camera/image_raw", 60, base_path)
     node.run()
             # self.save_path = path
 
