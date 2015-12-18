@@ -18,7 +18,7 @@ class StreetViewDriver(object):
     def __init__(self, image_topic, photoNumber, base_path):
         rospy.init_node('streetviewdriver')
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
-        rospy.Subscriber("/odom", Odometry, self.odom_signal)
+        rospy.Subscriber("/", Odometry, self.odom_signal)
         rospy.Subscriber(image_topic, Image, self.camera_signal)
         self.bridge = CvBridge()
         # cv2.namedWindow('video_window')
@@ -32,7 +32,7 @@ class StreetViewDriver(object):
         self.y = None
         self.yaw = None
         self.twist = Twist()
-        self.angularVelocity = 0.25
+        self.angularVelocity = 0.2
         self.photoNumber = photoNumber
         self.diff = 2*math.pi/self.photoNumber
         self.theta_start = None
